@@ -38,6 +38,27 @@ public class VisitTypeCheck {
         return null;
     }
 
+    // Just for debugging TypeFun
+    void debugFun(Type fun, int d) {
+        if (fun.getClass() == TypeFun.class)
+        {
+            System.out.println("Func:");
+            for (int i = 0; i < d; i++) {System.out.print("        ");}
+            System.out.print("Params: ");
+            debugFun(((TypeFun) fun).listtype_.get(0), d + 1);
+            for (int i = 1; i < ((TypeFun) fun).listtype_.size(); i++) {
+                for (int j = 0; j < d + 1; j++) {System.out.print("        ");}
+                debugFun(((TypeFun) fun).listtype_.get(i), d + 1);
+            }
+            for (int i = 0; i < d; i++) {System.out.print("        ");}
+            System.out.print("Return: ");
+            debugFun(((TypeFun) fun).type_, d + 1);
+            return;
+        }
+        System.out.println(fun.getClass());
+    }
+
+    // When enter scope save last position, and when exit delete all after that position
     void enterScope() {
         checkpoints.add(global.lastElement().first);
     }
@@ -96,6 +117,7 @@ public class VisitTypeCheck {
                 type_tmp = null;
                 x.accept(new ParamDeclVisitor<R, A>(), arg);
                 fun_params_type.add(type_tmp);
+                local.add(Pair.of(name_tmp, type_tmp));
             }
 
             // Save return type
@@ -110,18 +132,11 @@ public class VisitTypeCheck {
 
             // Save our function then save parameters as functions from local
             global.add(Pair.of(fun_name, new TypeFun(fun_params_type, fun_return)));
+            enterScope();
             global.addAll(local);
             local.clear();
 
-
-            enterScope();
             p.expr_.accept(new ExprVisitor<R, A>(), arg);
-
-//            for (Pair<String, TypeFun> i : global) {
-//                System.out.println("Name: " + i.first + " Return: " + i.second.type_);
-//                System.out.println("Params: " + i.second.listtype_);
-//            }
-
 
             // Check return statement matching with actual
             if (!fun_return.equals(type_tmp)) {
@@ -156,9 +171,7 @@ public class VisitTypeCheck {
         public R visit(org.syntax.stella.Absyn.AParamDecl p, A arg) { /* Code for AParamDecl goes here */
             p.type_.accept(new TypeVisitor<R, A>(), arg);
             name_tmp = p.stellaident_;
-            if(p.type_.getClass() == TypeFun.class)
-                local.add(Pair.of(p.stellaident_, (TypeFun) p.type_));
-            local.add(Pair.of(p.stellaident_, p.type_));
+            type_tmp = p.type_;
             return null;
         }
     }
@@ -200,6 +213,7 @@ public class VisitTypeCheck {
         public R visit(org.syntax.stella.Absyn.TypeRec p, A arg) { /* Code for TypeRec goes here */
             //p.stellaident_;
             p.type_.accept(new TypeVisitor<R, A>(), arg);
+            type_tmp = p.type_;
             return null;
         }
 
@@ -251,6 +265,7 @@ public class VisitTypeCheck {
 
         public R visit(org.syntax.stella.Absyn.TypeVar p, A arg) { /* Code for TypeVar goes here */
             //p.stellaident_;
+            System.out.print("TODO TypeVar");
             return null;
         }
     }
@@ -393,8 +408,19 @@ public class VisitTypeCheck {
 
         public R visit(org.syntax.stella.Absyn.If p, A arg) { /* Code for If goes here */
             p.expr_1.accept(new ExprVisitor<R, A>(), arg);
+            Type type1 = type_tmp;
+            if (type1.getClass() != TypeBool.class) {
+                System.out.println("Error: not Bool type in 'if'");
+                System.exit(1);
+            }
             p.expr_2.accept(new ExprVisitor<R, A>(), arg);
+            Type type2 = type_tmp;
             p.expr_3.accept(new ExprVisitor<R, A>(), arg);
+            Type type3 = type_tmp;
+            if (!type2.equals(type3)) {
+                System.out.println("Error: different 'if' return types");
+                System.exit(1);
+            }
             return null;
         }
 
@@ -550,7 +576,6 @@ public class VisitTypeCheck {
             }
             for (int i = 0; i < fun_exprs.size(); i++) {
                 if (!fun_exprs.get(i).equals(fun.listtype_.get(i))) {
-                    System.out.println("! " + fun_exprs + " | " + fun.listtype_);
                     System.out.println("Error: Not matching expr and parameters of function '" + fun_name + "'");
                     System.exit(1);
                 }
@@ -618,6 +643,7 @@ public class VisitTypeCheck {
         public R visit(org.syntax.stella.Absyn.Succ p, A arg) { /* Code for Succ goes here */
             p.expr_.accept(new ExprVisitor<R, A>(), arg);
             name_tmp = "succ";
+//            type_tmp = new TypeFun(,type_tmp);
             return null;
         }
 
@@ -643,8 +669,30 @@ public class VisitTypeCheck {
 
         public R visit(org.syntax.stella.Absyn.NatRec p, A arg) { /* Code for NatRec goes here */
             p.expr_1.accept(new ExprVisitor<R, A>(), arg);
+            Type type1 = type_tmp;
+            if (type1.getClass() != TypeNat.class) {
+                System.out.println("Error: function 'rec' n is not TypeNat");
+                System.exit(1);
+            }
             p.expr_2.accept(new ExprVisitor<R, A>(), arg);
+            Type type2 = type_tmp;
             p.expr_3.accept(new ExprVisitor<R, A>(), arg);
+            Type type3 = type_tmp;
+            if (type3.getClass() != TypeFun.class || ((TypeFun) type3).listtype_.size() != 1 ||
+                    ((TypeFun) type3).listtype_.get(0).getClass() != TypeNat.class ||
+                    ((TypeFun) type3).type_.getClass() != TypeFun.class ||
+                    ((TypeFun) ((TypeFun) type3).type_).listtype_.size() != 1 ||
+                    ((TypeFun) ((TypeFun) type3).type_).listtype_.get(0).getClass() != type2.getClass() ||
+                    ((TypeFun) ((TypeFun) type3).type_).type_.getClass() != type2.getClass()) {
+                System.out.println("Error: function 'rec' s is not fn(Nat) -> (fn(T) -> T)");
+                System.exit(1);
+            }
+            ListType params = new ListType();
+            params.add(type1);
+            params.add(type2);
+            params.add(type3);
+//            type_tmp = new TypeFun(params, ((TypeFun) type3).type_);
+            type_tmp = type2;
             return null;
         }
 
@@ -674,6 +722,7 @@ public class VisitTypeCheck {
 
         public R visit(org.syntax.stella.Absyn.ConstInt p, A arg) { /* Code for ConstInt goes here */
             //p.integer_;
+            System.out.println("ConstInt? " + p.integer_);
             return null;
         }
 
