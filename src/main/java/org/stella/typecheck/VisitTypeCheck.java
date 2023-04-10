@@ -644,7 +644,10 @@ public class VisitTypeCheck {
         public R visit(org.syntax.stella.Absyn.Succ p, A arg) { /* Code for Succ goes here */
             p.expr_.accept(new ExprVisitor<R, A>(), arg);
             name_tmp = "succ";
-//            type_tmp = new TypeFun(,type_tmp);
+            if (type_tmp.getClass() != TypeNat.class) {
+                System.out.println("Error: succ function not Nat");
+                System.exit(1);
+            }
             return null;
         }
 
@@ -706,10 +709,12 @@ public class VisitTypeCheck {
         }
 
         public R visit(org.syntax.stella.Absyn.ConstTrue p, A arg) { /* Code for ConstTrue goes here */
+            type_tmp = new TypeBool();
             return null;
         }
 
         public R visit(org.syntax.stella.Absyn.ConstFalse p, A arg) { /* Code for ConstFalse goes here */
+            type_tmp = new TypeBool();
             return null;
         }
 
