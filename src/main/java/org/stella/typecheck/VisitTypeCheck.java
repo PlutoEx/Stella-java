@@ -580,6 +580,7 @@ public class VisitTypeCheck {
                     System.exit(1);
                 }
             }
+            type_tmp = fun.type_;
             return null;
         }
 
@@ -687,12 +688,8 @@ public class VisitTypeCheck {
                 System.out.println("Error: function 'rec' s is not fn(Nat) -> (fn(T) -> T)");
                 System.exit(1);
             }
-            ListType params = new ListType();
-            params.add(type1);
-            params.add(type2);
-            params.add(type3);
 //            type_tmp = new TypeFun(params, ((TypeFun) type3).type_);
-            type_tmp = type2;
+            type_tmp = ((TypeFun) ((TypeFun) type3).type_).type_;
             return null;
         }
 
@@ -722,7 +719,7 @@ public class VisitTypeCheck {
 
         public R visit(org.syntax.stella.Absyn.ConstInt p, A arg) { /* Code for ConstInt goes here */
             //p.integer_;
-            System.out.println("ConstInt? " + p.integer_);
+            type_tmp = new TypeNat();
             return null;
         }
 
