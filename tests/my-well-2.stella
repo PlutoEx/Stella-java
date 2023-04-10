@@ -1,0 +1,9 @@
+language core;
+
+fn mmm(f: Nat) -> Nat {
+    return f;
+}
+
+fn main(f : Nat) -> Nat {
+  return mmm(f);
+}
