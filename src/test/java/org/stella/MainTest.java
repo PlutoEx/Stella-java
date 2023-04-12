@@ -12,11 +12,11 @@ class MainTest {
 
     @ParameterizedTest(name = "{index} Typechecking well-typed program {0}")
     @ValueSource(strings = {
-            "tests/well-typed/factorial.stella",
-            "tests/well-typed/squares.stella",
-            "tests/well-typed/higher-order-1.stella",
-            "tests/well-typed/increment_twice.stella",
-            "tests/well-typed/logical-operators.stella"})
+            "tests/core/well-typed/factorial.stella",
+            "tests/core/well-typed/squares.stella",
+            "tests/core/well-typed/higher-order-1.stella",
+            "tests/core/well-typed/increment_twice.stella",
+            "tests/core/well-typed/logical-operators.stella"})
     public void testWellTyped(String filepath) throws IOException, Exception {
         String[] args = new String[0];
         final InputStream original = System.in;
@@ -28,22 +28,22 @@ class MainTest {
 
     @ParameterizedTest(name = "{index} Typechecking ill-typed program {0}")
     @ValueSource(strings = {
-            "tests/ill-typed/applying-non-function-1.stella",
-            "tests/ill-typed/applying-non-function-2.stella",
-            "tests/ill-typed/applying-non-function-3.stella",
-            "tests/ill-typed/argument-type-mismatch-1.stella",
-            "tests/ill-typed/argument-type-mismatch-2.stella",
-            "tests/ill-typed/argument-type-mismatch-3.stella",
-            "tests/ill-typed/bad-if-1.stella",
-            "tests/ill-typed/bad-if-2.stella",
-            "tests/ill-typed/bad-succ-1.stella",
-            "tests/ill-typed/bad-succ-2.stella",
-            "tests/ill-typed/bad-succ-3.stella",
-            "tests/ill-typed/shadowed-variable-1.stella",
-            "tests/ill-typed/undefined-variable-1.stella",
-            "tests/ill-typed/undefined-variable-2.stella",
-            "tests/ill-typed/bad-squares-1.stella",
-            "tests/ill-typed/bad-squares-2.stella"})
+            "tests/core/ill-typed/applying-non-function-1.stella",
+            "tests/core/ill-typed/applying-non-function-2.stella",
+            "tests/core/ill-typed/applying-non-function-3.stella",
+            "tests/core/ill-typed/argument-type-mismatch-1.stella",
+            "tests/core/ill-typed/argument-type-mismatch-2.stella",
+            "tests/core/ill-typed/argument-type-mismatch-3.stella",
+            "tests/core/ill-typed/bad-if-1.stella",
+            "tests/core/ill-typed/bad-if-2.stella",
+            "tests/core/ill-typed/bad-succ-1.stella",
+            "tests/core/ill-typed/bad-succ-2.stella",
+            "tests/core/ill-typed/bad-succ-3.stella",
+            "tests/core/ill-typed/shadowed-variable-1.stella",
+            "tests/core/ill-typed/undefined-variable-1.stella",
+            "tests/core/ill-typed/undefined-variable-2.stella",
+            "tests/core/ill-typed/bad-squares-1.stella",
+            "tests/core/ill-typed/bad-squares-2.stella"})
     public void testIllTyped(String filepath) throws IOException, Exception {
         String[] args = new String[0];
         final InputStream original = System.in;
