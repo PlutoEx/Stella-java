@@ -1,9 +1,9 @@
 language core;
 
 fn first(a : Nat, b : Nat) -> Nat {
-        return a;
+    return a;
 }
 
-fn main () -> Nat {
-        return first(1, 2);
+fn main() -> Nat {
+    return first(1, 2);
 }

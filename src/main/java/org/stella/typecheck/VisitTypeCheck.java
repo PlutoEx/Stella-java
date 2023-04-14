@@ -87,9 +87,12 @@ public class VisitTypeCheck
                 x.accept(new DeclVisitor(), arg);
             }
 
-            HashMap newContext = new HashMap<>(arg.context);
-            AParamDecl paramDecl = (AParamDecl)p.listparamdecl_.get(0);
-            newContext.put(paramDecl.stellaident_, paramDecl.type_);
+            HashMap<String, Type> newContext = new HashMap<>(arg.context);
+            AParamDecl paramDecl = null;
+            if (p.listparamdecl_.size() != 0) {
+                paramDecl = (AParamDecl)p.listparamdecl_.get(0);
+                newContext.put(paramDecl.stellaident_, paramDecl.type_);
+            }
 
             Type returnType = p.returntype_.accept(new ReturnType.Visitor<Type, Object>() {
                 @Override
@@ -103,11 +106,13 @@ public class VisitTypeCheck
                 }
             }, null);
 
-            p.expr_.accept(new ExprVisitor(), new ContextAndExpectedType(newContext, returnType));
-
             ListType argListType = new ListType();
-            argListType.add(paramDecl.type_);
+            if (paramDecl != null)
+                argListType.add(paramDecl.type_);
             arg.context.put(p.stellaident_, new TypeFun(argListType, returnType));
+            newContext.put(p.stellaident_, new TypeFun(argListType, returnType));
+
+            p.expr_.accept(new ExprVisitor(), new ContextAndExpectedType(newContext, returnType));
             return null;
         }
         public org.syntax.stella.Absyn.Type visit(org.syntax.stella.Absyn.DeclTypeAlias p, ContextAndExpectedType arg)
@@ -480,10 +485,14 @@ public class VisitTypeCheck
         }
         public Type visit(org.syntax.stella.Absyn.List p, ContextAndExpectedType arg)
         { /* Code for List goes here */
+            Type prev = null;
             for (org.syntax.stella.Absyn.Expr x: p.listexpr_) {
-                x.accept(new ExprVisitor(), arg);
+                if (prev == null)
+                    prev = x.accept(new ExprVisitor(), new ContextAndExpectedType(arg.context, null));
+                else
+                    prev = x.accept(new ExprVisitor(), new ContextAndExpectedType(arg.context, prev));
             }
-            return null;
+            return compareTypes(p, new TypeList(prev), arg.expectedType);
         }
         public Type visit(org.syntax.stella.Absyn.Add p, ContextAndExpectedType arg)
         { /* Code for Add goes here */
@@ -541,14 +550,16 @@ public class VisitTypeCheck
         }
         public Type visit(org.syntax.stella.Absyn.DotTuple p, ContextAndExpectedType arg)
         { /* Code for DotTuple goes here */
-            p.expr_.accept(new ExprVisitor(), arg);
+            Type type = p.expr_.accept(new ExprVisitor(), arg);
+            System.out.println("! " + type);
             //p.integer_;
-            return null;
+            return type;
         }
         public Type visit(org.syntax.stella.Absyn.Tuple p, ContextAndExpectedType arg)
         { /* Code for Tuple goes here */
             for (org.syntax.stella.Absyn.Expr x: p.listexpr_) {
-                x.accept(new ExprVisitor(), arg);
+                Type type = x.accept(new ExprVisitor(), arg);
+                System.out.println(type);
             }
             return null;
         }
@@ -572,13 +583,21 @@ public class VisitTypeCheck
         }
         public Type visit(org.syntax.stella.Absyn.IsEmpty p, ContextAndExpectedType arg)
         { /* Code for IsEmpty goes here */
-            p.expr_.accept(new ExprVisitor(), arg);
-            return null;
+            System.out.println("Visiting isEmpty");
+            Type type = p.expr_.accept(new ExprVisitor(), new ContextAndExpectedType(arg.context, null));
+            if (type instanceof TypeList)
+                return compareTypes(p, new TypeBool(), arg.expectedType);
+            else
+                throw new TypeError("trying to apply an isempty to not List");
         }
         public Type visit(org.syntax.stella.Absyn.Tail p, ContextAndExpectedType arg)
         { /* Code for Tail goes here */
-            p.expr_.accept(new ExprVisitor(), arg);
-            return null;
+            System.out.println("Visiting tail");
+            Type type = p.expr_.accept(new ExprVisitor(), new ContextAndExpectedType(arg.context, null));
+            if (type instanceof TypeList)
+                return compareTypes(p, type , arg.expectedType);
+            else
+                throw new TypeError("trying to apply an tail to not List");
         }
         public Type visit(org.syntax.stella.Absyn.Inl p, ContextAndExpectedType arg)
         { /* Code for Inl goes here */

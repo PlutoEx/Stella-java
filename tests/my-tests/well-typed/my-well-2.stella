@@ -1,6 +1,6 @@
 language core;
 
-fn mmm(f: Nat) -> Nat {
+fn mmm(f : Nat) -> Nat {
     return f;
 }
 
