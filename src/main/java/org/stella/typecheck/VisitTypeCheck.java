@@ -371,8 +371,11 @@ public class VisitTypeCheck
         public Type visit(org.syntax.stella.Absyn.ABinding p, ContextAndExpectedType arg)
         { /* Code for ABinding goes here */
             //p.stellaident_;
-            p.expr_.accept(new ExprVisitor(), arg);
-            return null;
+            Type type = p.expr_.accept(new ExprVisitor(), arg);
+//            return null;
+            if (type instanceof TypeRec)
+                type = ((TypeRec) type).type_;
+            return new TypeRec(p.stellaident_, type);
         }
     }
     public class ExprVisitor implements org.syntax.stella.Absyn.Expr.Visitor<org.syntax.stella.Absyn.Type, ContextAndExpectedType>
@@ -545,13 +548,19 @@ public class VisitTypeCheck
         }
         public Type visit(org.syntax.stella.Absyn.DotRecord p, ContextAndExpectedType arg)
         { /* Code for DotRecord goes here */
-            p.expr_.accept(new ExprVisitor(), arg);
-            //p.stellaident_;
-            return null;
+            Type type = p.expr_.accept(new ExprVisitor(), new ContextAndExpectedType(arg.context, null));
+            if (type instanceof TypeRecord) {
+                ListRecordFieldType params = ((TypeRecord) type).listrecordfieldtype_;
+                for (RecordFieldType i : params)
+                    if (((ARecordFieldType) i).stellaident_.equals(p.stellaident_))
+                        return compareTypes(p, new TypeRec(((ARecordFieldType) i).stellaident_, ((ARecordFieldType) i).type_), arg.expectedType);
+                throw new TypeError("not found dot param from Record");
+            }
+            else
+                throw new TypeError("trying to get dot param from not Record");
         }
         public Type visit(org.syntax.stella.Absyn.DotTuple p, ContextAndExpectedType arg)
         { /* Code for DotTuple goes here */
-            //p.integer_;
             Type type = p.expr_.accept(new ExprVisitor(), new ContextAndExpectedType(arg.context, null));
             if (type instanceof TypeTuple) {
                 ListType params = ((TypeTuple) type).listtype_;
@@ -565,16 +574,18 @@ public class VisitTypeCheck
             ListType params = new ListType();
             for (org.syntax.stella.Absyn.Expr x: p.listexpr_) {
                 Type type = x.accept(new ExprVisitor(), new ContextAndExpectedType(arg.context, null));
-                params.push(type);
+                params.add(type);
             }
             return compareTypes(p, new TypeTuple(params), arg.expectedType);
         }
         public Type visit(org.syntax.stella.Absyn.Record p, ContextAndExpectedType arg)
         { /* Code for Record goes here */
+            ListRecordFieldType params = new ListRecordFieldType();
             for (org.syntax.stella.Absyn.Binding x: p.listbinding_) {
-                x.accept(new BindingVisitor(), arg);
+                Type type = x.accept(new BindingVisitor(), new ContextAndExpectedType(arg.context, null));
+                params.add(new ARecordFieldType(((TypeRec) type).stellaident_, ((TypeRec) type).type_));
             }
-            return null;
+            return compareTypes(p, new TypeRecord(params), arg.expectedType);
         }
         public Type visit(org.syntax.stella.Absyn.ConsList p, ContextAndExpectedType arg)
         { /* Code for ConsList goes here */
