@@ -303,6 +303,7 @@ public class VisitTypeCheck
         }
         public Type visit(org.syntax.stella.Absyn.PatternTuple p, ContextAndExpectedType arg)
         { /* Code for PatternTuple goes here */
+            System.out.println("IN PatternTuple");
             for (org.syntax.stella.Absyn.Pattern x: p.listpattern_) {
                 x.accept(new PatternVisitor(), arg);
             }
@@ -550,18 +551,23 @@ public class VisitTypeCheck
         }
         public Type visit(org.syntax.stella.Absyn.DotTuple p, ContextAndExpectedType arg)
         { /* Code for DotTuple goes here */
-            Type type = p.expr_.accept(new ExprVisitor(), arg);
-            System.out.println("! " + type);
             //p.integer_;
-            return type;
+            Type type = p.expr_.accept(new ExprVisitor(), new ContextAndExpectedType(arg.context, null));
+            if (type instanceof TypeTuple) {
+                ListType params = ((TypeTuple) type).listtype_;
+                return compareTypes(p, params.get(p.integer_ - 1), arg.expectedType);
+            }
+            else
+                throw new TypeError("trying to get dot param from not Tuple");
         }
         public Type visit(org.syntax.stella.Absyn.Tuple p, ContextAndExpectedType arg)
         { /* Code for Tuple goes here */
+            ListType params = new ListType();
             for (org.syntax.stella.Absyn.Expr x: p.listexpr_) {
-                Type type = x.accept(new ExprVisitor(), arg);
-                System.out.println(type);
+                Type type = x.accept(new ExprVisitor(), new ContextAndExpectedType(arg.context, null));
+                params.push(type);
             }
-            return null;
+            return compareTypes(p, new TypeTuple(params), arg.expectedType);
         }
         public Type visit(org.syntax.stella.Absyn.Record p, ContextAndExpectedType arg)
         { /* Code for Record goes here */
